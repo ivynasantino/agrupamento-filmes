@@ -1,10 +1,13 @@
 ---
-title: "Tipos de filme de FULANO(A)"
+title: "Análise dos filmes da atriz Carrie Fisher"
+author: "Ivyna Santino"
 output:
     html_document:
     df_print: paged
 theme: sandstone
 ---
+
+Introdução do que será o checkpoint
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -21,9 +24,63 @@ knitr::opts_chunk$set(tidy = FALSE,
                       fig.height = 5,
                       echo = TRUE)
 
-paleta = c("#404E4D",
-           "#92DCE5",
-           "#938BA1",
-           "#2D3142",
-           "#F4743B")
 ```
+Importando os filmes da atriz Carrie Fisher do Rotten Tomatoes.
+
+```{r, message=FALSE, warning=FALSE}
+# Para criar data/movies.csv
+import_data("carrie_fisher")
+```
+
+```{r read}
+filmes = read_imported_data()
+```
+
+Mostra filmes da atriz carrie fisher
+
+```{r}
+filmes %>% 
+    select(filme, papel, ano)
+```
+
+Dendograma --> colocar legendas
+
+```{r}
+agrupamento_h_2d = filmes %>% 
+    column_to_rownames("filme") %>%
+    select(avaliacao, bilheteria) %>%
+    dist(method = "euclidean") %>% 
+    hclust(method = "centroid")
+
+ggdendrogram(agrupamento_h_2d, rotate = TRUE)
+
+```
+
+Formação dos grupos
+```{r}
+get_grupos <- function(agrupamento, num_grupos){
+    agrupamento %>% 
+        cutree(num_grupos) %>% 
+        as.data.frame() %>% 
+        mutate(label = rownames(.)) %>% 
+        gather(key =  "k", value = "grupo", -label) %>% 
+        mutate(grupo = as.character(grupo))
+}
+
+atribuicoes = get_grupos(agrupamento_h, num_grupos = 1:4)
+
+atribuicoes = atribuicoes %>% 
+    left_join(filmes, by = c("label" = "filme"))
+
+atribuicoes %>% 
+    ggplot(aes(x = "Filmes", y = avaliacao, colour = grupo)) + 
+    geom_jitter(width = .02, height = 0, size = 1.6, alpha = .6) + 
+    facet_wrap(~ paste(k, " grupos")) + 
+    scale_color_brewer(palette = "Dark2")
+
+
+``` 
+
+Explicar formação dos grupos...
+
+Conclusão
